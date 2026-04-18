@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Jadwal Harian</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600&family=Syne:wght@700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f7f5f0;
+    --surface: #ffffff;
+    --border: #e8e4dc;
+    --text: #1a1814;
+    --muted: #8a8278;
+    --prayer: #2d6a4f;   --prayer-bg: #d8f3dc;
+    --chinese: #4a3f8f;  --chinese-bg: #ede9fc;
+    --econ: #1b5e3b;     --econ-bg: #d4edda;
+    --prog: #1a4f7a;     --prog-bg: #cce3f5;
+    --gym: #7a2e0e;      --gym-bg: #fde0cc;
+    --laundry: #6b4c0a;  --laundry-bg: #fef3cd;
+    --work: #3a3630;     --work-bg: #f0ede6;
+    --rest: #5a5248;     --rest-bg: #f5f2ec;
+    --accent: #c9a84c;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Plus Jakarta Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+  header {
+    background: var(--text);
+    color: #fff;
+    padding: 1.6rem 1.5rem 1.2rem;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .header-top { display: flex; align-items: baseline; gap: 12px; margin-bottom: 0.9rem; }
+  .header-top h1 { font-family: 'Syne', sans-serif; font-size: clamp(1.3rem, 4vw, 1.7rem); letter-spacing: -0.02em; }
+  .header-top .sub { font-size: 0.75rem; color: #aaa; }
+  .tabs { display: flex; gap: 6px; flex-wrap: wrap; }
+  .tab {
+    padding: 5px 13px;
+    border-radius: 99px;
+    border: 1.5px solid #444;
+    background: transparent;
+    color: #bbb;
+    cursor: pointer;
+    font-size: 11.5px;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-weight: 500;
+    transition: all 0.15s;
+    white-space: nowrap;
+  }
+  .tab:hover { border-color: #888; color: #ddd; }
+  .tab.on { background: var(--accent); border-color: var(--accent); color: #1a1814; }
+
+  .legend { display: flex; flex-wrap: wrap; gap: 8px; padding: 1rem 1rem 0; max-width: 680px; margin: 0 auto; }
+  .li { display: flex; align-items: center; gap: 5px; font-size: 11px; color: var(--muted); }
+  .ld { width: 9px; height: 9px; border-radius: 2px; flex-shrink: 0; }
+
+  .content { max-width: 680px; margin: 0 auto; padding: 1.4rem 1rem 3rem; }
+  .sch { display: none; }
+  .sch.on { display: block; }
+
+  .day-label {
+    font-family: 'Syne', sans-serif;
+    font-size: 1.05rem;
+    font-weight: 700;
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1.5px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .day-label .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); flex-shrink: 0; }
+
+  .divider {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 12px 0 7px;
+    font-size: 10.5px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+  }
+  .divider::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+  .callout {
+    background: #fffbef;
+    border: 1px solid #f0d98a;
+    border-left: 3px solid var(--accent);
+    border-radius: 8px;
+    padding: 9px 13px;
+    font-size: 11.5px;
+    color: #7a6010;
+    margin-bottom: 10px;
+    line-height: 1.5;
+  }
+
+  .block {
+    display: flex;
+    align-items: stretch;
+    border-radius: 10px;
+    overflow: hidden;
+    margin-bottom: 4px;
+    border: 1px solid var(--border);
+    transition: transform 0.1s;
+  }
+  .block:hover { transform: translateX(2px); }
+  .tc {
+    width: 86px; min-width: 86px;
+    font-size: 10.5px; color: var(--muted);
+    padding: 8px 9px;
+    display: flex; align-items: center;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    line-height: 1.3; font-weight: 500;
+  }
+  .ct { flex: 1; padding: 8px 13px; display: flex; flex-direction: column; justify-content: center; }
+  .lbl { font-size: 12.5px; font-weight: 600; }
+  .sub { font-size: 11px; opacity: 0.72; margin-top: 2px; line-height: 1.4; }
+
+  .prayer  { background: var(--prayer-bg); }  .prayer  .lbl { color: var(--prayer); }
+  .chinese { background: var(--chinese-bg); } .chinese .lbl { color: var(--chinese); }
+  .econ    { background: var(--econ-bg); }    .econ    .lbl { color: var(--econ); }
+  .prog    { background: var(--prog-bg); }    .prog    .lbl { color: var(--prog); }
+  .gym     { background: var(--gym-bg); }     .gym     .lbl { color: var(--gym); }
+  .laundry { background: var(--laundry-bg); } .laundry .lbl { color: var(--laundry); }
+  .work    { background: var(--work-bg); }    .work    .lbl { color: var(--work); }
+  .rest    { background: var(--rest-bg); }    .rest    .lbl { color: var(--rest); }
+
+  @media (max-width: 480px) {
+    header { padding: 1.1rem 1rem 1rem; }
+    .tc { width: 76px; min-width: 76px; font-size: 10px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-top">
+    <h1>Jadwal Harian</h1>
+    <span class="sub">Sholat · Belajar · Gym · Istirahat</span>
+  </div>
+  <div class="tabs">
+    <div class="tab on" onclick="sw('mon',this)">Senin</div>
+    <div class="tab" onclick="sw('tue',this)">Selasa</div>
+    <div class="tab" onclick="sw('wed',this)">Rabu</div>
+    <div class="tab" onclick="sw('twh',this)">Kamis WFH</div>
+    <div class="tab" onclick="sw('tof',this)">Kamis Kantor</div>
+    <div class="tab" onclick="sw('fn',this)">Jumat Normal</div>
+    <div class="tab" onclick="sw('fl',this)">Jumat +Laundry</div>
+    <div class="tab" onclick="sw('sat',this)">Sabtu</div>
+    <div class="tab" onclick="sw('sun',this)">Minggu</div>
+  </div>
+</header>
+
+<div class="legend">
+  <div class="li"><div class="ld" style="background:var(--prayer-bg);border:1px solid var(--prayer)"></div>Sholat</div>
+  <div class="li"><div class="ld" style="background:var(--chinese-bg);border:1px solid var(--chinese)"></div>Chinese</div>
+  <div class="li"><div class="ld" style="background:var(--econ-bg);border:1px solid var(--econ)"></div>Economics</div>
+  <div class="li"><div class="ld" style="background:var(--prog-bg);border:1px solid var(--prog)"></div>Programming</div>
+  <div class="li"><div class="ld" style="background:var(--gym-bg);border:1px solid var(--gym)"></div>Gym</div>
+  <div class="li"><div class="ld" style="background:var(--laundry-bg);border:1px solid var(--laundry)"></div>Laundry</div>
+  <div class="li"><div class="ld" style="background:var(--work-bg);border:1px solid #aaa"></div>Kerja</div>
+  <div class="li"><div class="ld" style="background:var(--rest-bg);border:1px solid #ccc"></div>Istirahat</div>
+</div>
+
+<div class="content">
+
+<!-- =================== SENIN =================== -->
+<div class="sch on" id="mon">
+  <div class="day-label"><div class="dot"></div>Senin — Hari Kantor</div>
+  <div class="divider">Pagi</div>
+  <div class="block"><div class="tc">04:44–04:54</div><div class="ct prayer"><div class="lbl">Subuh</div></div></div>
+  <div class="block"><div class="tc">04:54–05:45</div><div class="ct rest"><div class="lbl">Tidur lagi</div></div></div>
+  <div class="block"><div class="tc">05:45–06:00</div><div class="ct chinese"><div class="lbl">Chinese — 15 menit</div><div class="sub">Anki flashcards saja. Sangat ringan.</div></div></div>
+  <div class="block"><div class="tc">06:00–06:30</div><div class="ct work"><div class="lbl">Persiapan & berangkat</div></div></div>
+  <div class="divider">Kantor</div>
+  <div class="block"><div class="tc">06:30–08:30</div><div class="ct work"><div class="lbl">Perjalanan ke kantor</div><div class="sub">Musik / podcast santai — tidak wajib belajar</div></div></div>
+  <div class="block"><div class="tc">08:30–11:53</div><div class="ct work"><div class="lbl">Kerja</div></div></div>
+  <div class="block"><div class="tc">11:53–12:03</div><div class="ct prayer"><div class="lbl">Dzuhur</div></div></div>
+  <div class="block"><div class="tc">12:03–13:00</div><div class="ct rest"><div class="lbl">Istirahat siang</div></div></div>
+  <div class="block"><div class="tc">13:00–15:12</div><div class="ct work"><div class="lbl">Kerja</div></div></div>
+  <div class="block"><div class="tc">15:12–15:22</div><div class="ct prayer"><div class="lbl">Ashar</div></div></div>
+  <div class="block"><div class="tc">15:22–17:00</div><div class="ct work"><div class="lbl">Kerja</div></div></div>
+  <div class="divider">Pulang & Malam</div>
+  <div class="block"><div class="tc">17:00–19:00</div><div class="ct rest"><div class="lbl">Perjalanan pulang — istirahat penuh</div></div></div>
+  <div class="block"><div class="tc">~17:52</div><div class="ct prayer"><div class="lbl">Maghrib</div><div class="sub">Di perjalanan atau sesampainya di rumah</div></div></div>
+  <div class="block"><div class="tc">19:00–19:20</div><div class="ct rest"><div class="lbl">Makan malam</div></div></div>
+  <div class="block"><div class="tc">~19:03</div><div class="ct prayer"><div class="lbl">Isya</div></div></div>
+  <div class="block"><div class="tc">19:30–20:00</div><div class="ct econ"><div class="lbl">Economics — ringan 30 menit</div><div class="sub">Baca 1 artikel atau cek berita pasar. Santai saja.</div></div></div>
+  <div class="block"><div class="tc">20:00+</div><div class="ct rest"><div class="lbl">Bebas & tidur</div></div></div>
+</div>
+
+<!-- =================== SELASA =================== -->
+<div class="sch" id="tue">
+  <div class="day-label"><div class="dot"></div>Selasa — Hari Kantor</div>
+  <div class="divider">Pagi</div>
+  <div class="block"><div class="tc">04:44–04:54</div><div class="ct prayer"><div class="lbl">Subuh</div></div></div>
+  <div class="block"><div class="tc">04:54–05:45</div><div class="ct rest"><div class="lbl">Tidur lagi</div></div></div>
+  <div class="block"><div class="tc">05:45–06:00</div><div class="ct chinese"><div class="lbl">Chinese — 15 menit</div><div class="sub">Anki flashcards saja</div></div></div>
+  <div class="block"><div class="tc">06:00–06:30</div><div class="ct work"><div class="lbl">Persiapan & berangkat</div></div></div>
+  <div class="divider">Kantor</div>
+  <div class="block"><div class="tc">06:30–08:30</div><div class="ct work"><div class="lbl">Perjalanan ke kantor</div></div></div>
+  <div class="block"><div class="tc">08:30–11:53</div><div class="ct work"><div class="lbl">Kerja</div></div></div>
+  <div class="block"><div class="tc">11:53–12:03</div><div class="ct prayer"><div class="lbl">Dzuhur</div></div></div>
+  <div class="block"><div class="tc">12:03–13:00</div><div class="ct rest"><div class="lbl">Istirahat siang</div></div></div>
+  <div class="block"><div class="tc">13:00–15:12</div><div class="ct work"><div class="lbl">Kerja</div></div></div>
+  <div class="block"><div class="tc">15:12–15:22</div><div class="ct prayer"><div class="lbl">Ashar</div></div></div>
+  <div class="block"><div class="tc">15:22–17:00</div><div class="ct work"><div class="lbl">Kerja</div></div></div>
+  <div class="divider">Pulang & Malam</div>
+  <div class="block"><div class="tc">17:00–19:00</div><div class="ct rest"><div class="lbl">Perjalanan pulang — istirahat penuh</div></div></div>
+  <div class="block"><div class="tc">~17:52</div><div class="ct prayer"><div class="lbl">Maghrib</div></div></div>
+  <div class="block"><div class="tc">19:00–19:20</div><div class="ct rest"><div class="lbl">Makan malam</div></div></div>
+  <div class="block"><div class="tc">~19:03</div><div class="ct prayer"><div class="lbl">Isya</div></div></div>
+  <div class="block"><div class="tc">19:30–20:00</div><div class="ct prog"><div class="lbl">Programming — ringan 30 menit</div><div class="sub">Tonton 1 video tutorial atau baca docs</div></div></div>
+  <div class="block"><div class="tc">20:00+</div><div class="ct rest"><div class="lbl">Bebas & tidur</div></div></div>
+</div>
+
+<!-- =================== RABU =================== -->
+<div class="sch" id="wed">
+  <div class="day-label"><div class="dot"></div>Rabu — Hari Kantor</div>
+  <div class="divider">Pagi</div>
+  <div class="block"><div class="tc">04:44–04:54</div><div class="ct prayer"><div class="lbl">Subuh</div></div></div>
+  <div class="block"><div class="tc">04:54–05:45</div><div class="ct rest"><div class="lbl">Tidur lagi</div></div></div>
+  <div class="block"><div class="tc">05:45–06:00</div><div class="ct chinese"><div class="lbl">Chinese — 15 menit</div><div class="sub">Anki flashcards saja</div></div></div>
+  <div class="block"><div class="tc">06:00–06:30</div><div class="ct work"><div class="lbl">Persiapan & berangkat</div></div></div>
+  <div class="divider">Kantor</div>
+  <div class="block"><div class="tc">06:30–08:30</div><div class="ct work"><div class="lbl">Perjalanan ke kantor</div></div></div>
+  <div class="block"><div class="tc">08:30–11:53</div><div class="ct work"><div class="lbl">Kerja</div></div></div>
+  <div class="block"><div class="tc">11:53–12:03</div><div class="ct prayer"><div class="lbl">Dzuhur</div></div></div>
+  <div class="block"><div class="tc">12:03–13:00</div><div class="ct rest"><div class="lbl">Istirahat siang</div></div></div>
+  <div class="block"><div class="tc">13:00–15:12</div><div class="ct work"><div class="lbl">Kerja</div></div></div>
+  <div class="block"><div class="tc">15:12–15:22</div><div class="ct prayer"><div class="lbl">Ashar</div></div></div>
+  <div class="block"><div class="tc">15:22–17:00</div><div class="ct work"><div class="lbl">Kerja</div></div></div>
+  <div class="divider">Pulang & Malam</div>
+  <div class="block"><div class="tc">17:00–19:00</div><div class="ct rest"><div class="lbl">Perjalanan pulang — istirahat penuh</div></div></div>
+  <div class="block"><div class="tc">~17:52</div><div class="ct prayer"><div class="lbl">Maghrib</div></div></div>
+  <div class="block"><div class="tc">19:00–19:20</div><div class="ct rest"><div class="lbl">Makan malam</div></div></div>
+  <div class="block"><div class="tc">~19:03</div><div class="ct prayer"><div class="lbl">Isya</div></div></div>
+  <div class="block"><div class="tc">19:30–20:00</div><div class="ct econ"><div class="lbl">Economics — ringan 30 menit</div><div class="sub">Baca artikel atau review catatan</div></div></div>
+  <div class="block"><div class="tc">20:00+</div><div class="ct rest"><div class="lbl">Bebas & tidur</div></div></div>
+</div>
+
+<!-- =================== KAMIS WFH =================== -->
+<div class="sch" id="twh">
+  <div class="day-label"><div class="dot"></div>Kamis — WFH + Laundry + Gym</div>
+  <div class="divider">Pagi</div>
+  <div class="block"><div class="tc">04:44–04:54</div><div class="ct prayer"><div class="lbl">Subuh</div></div></div>
+  <div class="block"><div class="tc">04:54–06:00</div><div class="ct rest"><div class="lbl">Tidur lagi</div></div></div>
+  <div class="block"><div class="tc">06:00–06:15</div><div class="ct chinese"><div class="lbl">Chinese — 15 menit</div><div class="sub">Anki pagi</div></div></div>
+  <div class="block"><div class="tc">06:15–08:30</div><div class="ct rest"><div class="lbl">Sarapan & mulai kerja</div></div></div>
+  <div class="divider">Kerja dari Rumah</div>
+  <div class="block"><div class="tc">08:30–11:53</div><div class="ct work"><div class="lbl">Kerja (from home)</div></div></div>
+  <div class="block"><div class="tc">11:53–12:03</div><div class="ct prayer"><div class="lbl">Dzuhur</div></div></div>
+  <div class="block"><div class="tc">12:03–13:00</div><div class="ct rest"><div class="lbl">Istirahat siang</div></div></div>
+  <div class="block"><div class="tc">13:00–15:00</div><div class="ct work"><div class="lbl">Kerja (from home)</div></div></div>
+  <div class="block"><div class="tc">15:00–15:12</div><div class="ct prayer"><div class="lbl">Ashar</div></div></div>
+  <div class="block"><div class="tc">15:12–17:00</div><div class="ct laundry"><div class="lbl">Cuci baju</div><div class="sub">Mesin nyala — kamu tetap santai di rumah</div></div></div>
+  <div class="divider">Sore & Malam</div>
+  <div class="block"><div class="tc">17:00–19:00</div><div class="ct gym"><div class="lbl">Gym — sesi 1 (2 jam)</div><div class="sub">Langsung setelah kerja, masih ada tenaga</div></div></div>
+  <div class="block"><div class="tc">~17:52</div><div class="ct prayer"><div class="lbl">Maghrib</div><div class="sub">Jeda gym atau sesudahnya</div></div></div>
+  <div class="block"><div class="tc">19:00–19:30</div><div class="ct rest"><div class="lbl">Mandi & makan malam</div></div></div>
+  <div class="block"><div class="tc">~19:03</div><div class="ct prayer"><div class="lbl">Isya</div></div></div>
+  <div class="block"><div class="tc">19:30–20:00</div><div class="ct prog"><div class="lbl">Programming — ringan 30 menit</div><div class="sub">Sudah capek — santai saja, 1 hal kecil</div></div></div>
+  <div class="block"><div class="tc">20:00+</div><div class="ct rest"><div class="lbl">Bebas & tidur</div></div></div>
+</div>
+
+<!-- =================== KAMIS KANTOR =================== -->
+<div class="sch" id="tof">
+  <div class="day-label"><div class="dot"></div>Kamis — Hari Kantor (Alternatif)</div>
+  <div class="callout">4 jam perjalanan hari ini. Gym & laundry otomatis pindah ke Jumat. Tidak ada belajar malam — istirahat adalah prioritas.</div>
+  <div class="divider">Pagi</div>
+  <div class="block"><div class="tc">04:44–04:54</div><div class="ct prayer"><div class="lbl">Subuh</div></div></div>
+  <div class="block"><div class="tc">04:54–05:45</div><div class="ct rest"><div class="lbl">Tidur lagi</div></div></div>
+  <div class="block"><div class="tc">05:45–06:00</div><div class="ct chinese"><div class="lbl">Chinese — 15 menit</div><div class="sub">Anki saja, super ringan</div></div></div>
+  <div class="block"><div class="tc">06:00–06:30</div><div class="ct work"><div class="lbl">Persiapan & berangkat</div></div></div>
+  <div class="divider">Kantor</div>
+  <div class="block"><div class="tc">06:30–08:30</div><div class="ct work"><div class="lbl">Perjalanan ke kantor</div></div></div>
+  <div class="block"><div class="tc">08:30–11:53</div><div class="ct work"><div class="lbl">Kerja</div></div></div>
+  <div class="block"><div class="tc">11:53–12:03</div><div class="ct prayer"><div class="lbl">Dzuhur</div></div></div>
+  <div class="block"><div class="tc">12:03–13:00</div><div class="ct rest"><div class="lbl">Istirahat siang</div></div></div>
+  <div class="block"><div class="tc">13:00–15:12</div><div class="ct work"><div class="lbl">Kerja</div></div></div>
+  <div class="block"><div class="tc">15:12–15:22</div><div class="ct prayer"><div class="lbl">Ashar</div></div></div>
+  <div class="block"><div class="tc">15:22–17:00</div><div class="ct work"><div class="lbl">Kerja</div></div></div>
+  <div class="divider">Pulang & Malam</div>
+  <div class="block"><div class="tc">17:00–19:00</div><div class="ct rest"><div class="lbl">Perjalanan pulang — istirahat penuh</div></div></div>
+  <div class="block"><div class="tc">~17:52</div><div class="ct prayer"><div class="lbl">Maghrib</div></div></div>
+  <div class="block"><div class="tc">19:00–19:20</div><div class="ct rest"><div class="lbl">Makan malam</div></div></div>
+  <div class="block"><div class="tc">~19:03</div><div class="ct prayer"><div class="lbl">Isya</div></div></div>
+  <div class="block"><div class="tc">19:30+</div><div class="ct rest"><div class="lbl">Bebas penuh — tidak ada belajar malam ini</div><div class="sub">Kamu sudah sangat capek. Tidak ada guilt.</div></div></div>
+</div>
+
+<!-- =================== JUMAT NORMAL =================== -->
+<div class="sch" id="fn">
+  <div class="day-label"><div class="dot"></div>Jumat — WFH Biasa (Kamis sudah WFH)</div>
+  <div class="divider">Pagi</div>
+  <div class="block"><div class="tc">04:44–04:54</div><div class="ct prayer"><div class="lbl">Subuh</div></div></div>
+  <div class="block"><div class="tc">04:54–06:00</div><div class="ct rest"><div class="lbl">Tidur lagi</div></div></div>
+  <div class="block"><div class="tc">06:00–06:15</div><div class="ct chinese"><div class="lbl">Chinese — 15 menit</div></div></div>
+  <div class="block"><div class="tc">06:15–08:30</div><div class="ct rest"><div class="lbl">Sarapan & mulai kerja</div></div></div>
+  <div class="divider">Kerja dari Rumah</div>
+  <div class="block"><div class="tc">08:30–11:53</div><div class="ct work"><div class="lbl">Kerja (from home)</div></div></div>
+  <div class="block"><div class="tc">11:53–12:03</div><div class="ct prayer"><div class="lbl">Dzuhur / Sholat Jumat</div></div></div>
+  <div class="block"><div class="tc">12:03–13:00</div><div class="ct rest"><div class="lbl">Istirahat siang</div></div></div>
+  <div class="block"><div class="tc">13:00–15:12</div><div class="ct work"><div class="lbl">Kerja (from home)</div></div></div>
+  <div class="block"><div class="tc">15:12–15:22</div><div class="ct prayer"><div class="lbl">Ashar</div></div></div>
+  <div class="block"><div class="tc">15:22–17:00</div><div class="ct work"><div class="lbl">Kerja (from home)</div></div></div>
+  <div class="divider">Sore & Malam</div>
+  <div class="block"><div class="tc">17:00–19:00</div><div class="ct gym"><div class="lbl">Gym — sesi 2 (2 jam)</div></div></div>
+  <div class="block"><div class="tc">~17:52</div><div class="ct prayer"><div class="lbl">Maghrib</div><div class="sub">Jeda gym atau sesudahnya</div></div></div>
+  <div class="block"><div class="tc">19:00–19:30</div><div class="ct rest"><div class="lbl">Mandi & makan malam</div></div></div>
+  <div class="block"><div class="tc">~19:03</div><div class="ct prayer"><div class="lbl">Isya</div></div></div>
+  <div class="block"><div class="tc">19:30–20:00</div><div class="ct econ"><div class="lbl">Economics — ringan 30 menit</div><div class="sub">Santai tutup minggu kerja</div></div></div>
+  <div class="block"><div class="tc">20:00+</div><div class="ct rest"><div class="lbl">Weekend dimulai!</div></div></div>
+</div>
+
+<!-- =================== JUMAT + LAUNDRY =================== -->
+<div class="sch" id="fl">
+  <div class="day-label"><div class="dot"></div>Jumat — WFH + Laundry + Gym (Kamis ke Kantor)</div>
+  <div class="callout">Kamis ke kantor → laundry & gym pindah ke Jumat semua. Skip belajar malam karena sudah banyak hari ini.</div>
+  <div class="divider">Pagi</div>
+  <div class="block"><div class="tc">04:44–04:54</div><div class="ct prayer"><div class="lbl">Subuh</div></div></div>
+  <div class="block"><div class="tc">04:54–06:00</div><div class="ct rest"><div class="lbl">Tidur lagi</div></div></div>
+  <div class="block"><div class="tc">06:00–06:15</div><div class="ct chinese"><div class="lbl">Chinese — 15 menit</div></div></div>
+  <div class="block"><div class="tc">06:15–08:30</div><div class="ct rest"><div class="lbl">Sarapan & mulai kerja</div></div></div>
+  <div class="divider">Kerja dari Rumah</div>
+  <div class="block"><div class="tc">08:30–11:53</div><div class="ct work"><div class="lbl">Kerja (from home)</div></div></div>
+  <div class="block"><div class="tc">11:53–12:03</div><div class="ct prayer"><div class="lbl">Dzuhur / Sholat Jumat</div></div></div>
+  <div class="block"><div class="tc">12:03–13:00</div><div class="ct rest"><div class="lbl">Istirahat siang</div></div></div>
+  <div class="block"><div class="tc">13:00–15:00</div><div class="ct work"><div class="lbl">Kerja (from home)</div></div></div>
+  <div class="block"><div class="tc">15:00–15:12</div><div class="ct prayer"><div class="lbl">Ashar</div></div></div>
+  <div class="block"><div class="tc">15:12–17:00</div><div class="ct laundry"><div class="lbl">Cuci baju</div><div class="sub">Mesin nyala sambil selesaikan kerja</div></div></div>
+  <div class="divider">Sore & Malam</div>
+  <div class="block"><div class="tc">17:00–19:00</div><div class="ct gym"><div class="lbl">Gym — 2 jam (sesi minggu ini)</div></div></div>
+  <div class="block"><div class="tc">~17:52</div><div class="ct prayer"><div class="lbl">Maghrib</div><div class="sub">Jeda gym</div></div></div>
+  <div class="block"><div class="tc">19:00–19:30</div><div class="ct rest"><div class="lbl">Mandi & makan malam</div></div></div>
+  <div class="block"><div class="tc">~19:03</div><div class="ct prayer"><div class="lbl">Isya</div></div></div>
+  <div class="block"><div class="tc">19:30–20:30</div><div class="ct rest"><div class="lbl">Grinding leet code</div></div></div>
+  <div class="block"><div class="tc">21:00</div><div class="ct rest"><div class="lbl">Bebas — skip belajar, hari ini sudah banyak</div></div></div>
+</div>
+
+<!-- =================== SABTU =================== -->
+<div class="sch" id="sat">
+  <div class="day-label"><div class="dot"></div>Sabtu — Light Pagi · Me Time Siang · Deep Malam</div>
+  <div class="divider">Pagi — light learning (2 jam)</div>
+  <div class="block"><div class="tc">04:44–04:54</div><div class="ct prayer"><div class="lbl">Subuh</div></div></div>
+  <div class="block"><div class="tc">04:54–07:30</div><div class="ct rest"><div class="lbl">Tidur lagi — santai</div></div></div>
+  <div class="block"><div class="tc">07:30–08:15</div><div class="ct chinese"><div class="lbl">Chinese — 45 menit ringan</div><div class="sub">Flashcards, podcast Mandarin, atau video pendek</div></div></div>
+  <div class="block"><div class="tc">08:15–09:00</div><div class="ct econ"><div class="lbl">Economics — 45 menit ringan</div><div class="sub">Baca 1–2 artikel atau cek berita pasar</div></div></div>
+  <div class="block"><div class="tc">09:00–10:00</div><div class="ct rest"><div class="lbl">Sarapan & santai</div></div></div>
+  <div class="divider">Siang — me time</div>
+  <div class="block"><div class="tc">10:30–11:00</div><div class="ct rest"><div class="lbl">Siap-siap ke mall</div></div></div>
+  <div class="block"><div class="tc">11:00–16:30</div><div class="ct rest"><div class="lbl">Me time — mall!</div><div class="sub">Nikmati sepenuhnya. Ini waktumu.</div></div></div>
+  <div class="block"><div class="tc">~11:53</div><div class="ct prayer"><div class="lbl">Dzuhur</div><div class="sub">Di musholla mall</div></div></div>
+  <div class="block"><div class="tc">~15:12</div><div class="ct prayer"><div class="lbl">Ashar</div><div class="sub">Di musholla mall</div></div></div>
+  <div class="block"><div class="tc">16:30–18:00</div><div class="ct rest"><div class="lbl">Pulang, istirahat & makan malam</div></div></div>
+  <div class="block"><div class="tc">~17:52</div><div class="ct prayer"><div class="lbl">Maghrib</div></div></div>
+  <div class="divider">Malam — deep learning (sejuk & fokus)</div>
+  <div class="block"><div class="tc">~19:03</div><div class="ct prayer"><div class="lbl">Isya</div></div></div>
+  <div class="block"><div class="tc">19:15–19:45</div><div class="ct chinese"><div class="lbl">Chinese — deep</div><div class="sub">Grammar, menulis, speaking, atau pelajaran baru</div></div></div>
+  <div class="block"><div class="tc">19:45–20:45</div><div class="ct chinese"><div class="lbl">Leet Code</div><div class="sub">Grinding</div></div></div>
+  <div class="block"><div class="tc">20:45–21:45</div><div class="ct prog"><div class="lbl">Programming — deep 1 jam</div><div class="sub">Coding project atau konsep baru yang butuh konsentrasi</div></div></div>
+  <div class="block"><div class="tc">21:45–22:45</div><div class="ct econ"><div class="lbl">Economics — deep 1 jam</div><div class="sub">Analisa chart mendalam, baca buku, atau kursus online</div></div></div>
+  <div class="block"><div class="tc">22:45+</div><div class="ct rest"><div class="lbl">Tidur</div></div></div>
+</div>
+
+<!-- =================== MINGGU =================== -->
+<div class="sch" id="sun">
+  <div class="day-label"><div class="dot"></div>Minggu — Light Pagi · Bebas Siang · Deep Malam</div>
+  <div class="divider">Pagi — light learning (2 jam)</div>
+  <div class="block"><div class="tc">04:44–04:54</div><div class="ct prayer"><div class="lbl">Subuh</div></div></div>
+  <div class="block"><div class="tc">04:54–08:00</div><div class="ct rest"><div class="lbl">Tidur lagi & pagi santai</div></div></div>
+  <div class="block"><div class="tc">08:00–08:45</div><div class="ct prog"><div class="lbl">Programming — 45 menit ringan</div><div class="sub">Baca artikel, tonton video, atau review konsep</div></div></div>
+  <div class="block"><div class="tc">08:45–09:30</div><div class="ct chinese"><div class="lbl">Chinese — 45 menit ringan</div><div class="sub">Anki + dengerin percakapan atau lagu Mandarin</div></div></div>
+  <div class="block"><div class="tc">09:30–10:00</div><div class="ct work"><div class="lbl">Set goals minggu depan</div><div class="sub">Review progress singkat & rencanakan target belajar</div></div></div>
+  <div class="divider">Siang — bebas total</div>
+  <div class="block"><div class="tc">10:00+</div><div class="ct rest"><div class="lbl">Bebas seharian — keluarga, sosial, santai</div></div></div>
+  <div class="block"><div class="tc">~11:53</div><div class="ct prayer"><div class="lbl">Dzuhur</div></div></div>
+  <div class="block"><div class="tc">~15:12</div><div class="ct prayer"><div class="lbl">Ashar</div></div></div>
+  <div class="block"><div class="tc">~17:52</div><div class="ct prayer"><div class="lbl">Maghrib</div></div></div>
+  <div class="divider">Malam — deep learning (sejuk & fokus)</div>
+  <div class="block"><div class="tc">18:30–19:03</div><div class="ct rest"><div class="lbl">Makan malam & istirahat sebentar</div></div></div>
+  <div class="block"><div class="tc">~19:03</div><div class="ct prayer"><div class="lbl">Isya</div></div></div>
+  <div class="block"><div class="tc">19:15–20:15</div><div class="ct econ"><div class="lbl">Economics — deep 1 jam</div><div class="sub">Riset saham mingguan atau baca buku</div></div></div>
+  <div class="block"><div class="tc">20:15–21:15</div><div class="ct chinese"><div class="lbl">Chinese — deep 1 jam</div><div class="sub">Review vocab & kalimat seluruh minggu</div></div></div>
+  <div class="block"><div class="tc">21:15–22:15</div><div class="ct prog"><div class="lbl">Programming — deep 1 jam</div><div class="sub">Lanjut project atau eksplor hal baru</div></div></div>
+  <div class="block"><div class="tc">22:15+</div><div class="ct rest"><div class="lbl">Tidur — semangat minggu baru!</div></div></div>
+</div>
+
+</div>
+
+<script>
+function sw(id, el) {
+  document.querySelectorAll('.sch').forEach(s => s.classList.remove('on'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('on'));
+  document.getElementById(id).classList.add('on');
+  el.classList.add('on');
+}
+// Auto-open today's tab
+const map = { 0:'sun', 1:'mon', 2:'tue', 3:'wed', 4:'twh', 5:'fn', 6:'sat' };
+const tid = map[new Date().getDay()];
+const tab = document.querySelector(`.tab[onclick*="'${tid}'"]`);
+if (tab) {
+  document.querySelectorAll('.sch').forEach(s => s.classList.remove('on'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('on'));
+  document.getElementById(tid).classList.add('on');
+  tab.classList.add('on');
+}
+</script>
+</body>
+</html>
